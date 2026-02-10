@@ -120,13 +120,14 @@ load("/Users/jberna5/Library/CloudStorage/GoogleDrive-bernau.john@gmail.com/My D
 scr_df$isPartOf <- factor(scr_df$isPartOf, levels = c("American Journal of Sociology", "Social Forces", "American Sociological Review"))
 df2 <- scr_df %>% 
   group_by(isPartOf, publicationYear) %>% 
-  summarize(count = sum(count))
+  summarize(count = sum(count), apy = n()) %>% 
+  mutate(scr_perart = count / apy)
 
 # Graph #1: all with smoothed
 df2 %>% 
   filter(!is.na(isPartOf)) %>% 
   #filter(publicationYear > 1960) %>% 
-  ggplot(aes(x = publicationYear, y = count)) + 
+  ggplot(aes(x = publicationYear, y = scr_perart)) + 
   geom_point(aes(color = isPartOf), size = 3, alpha = 0.7) +
   geom_smooth(aes(color = isPartOf), se = FALSE) +
   theme_minimal()
@@ -139,10 +140,9 @@ df2 %>%
 df2 %>% 
   filter(!is.na(isPartOf)) %>% 
   filter(publicationYear > 1960) %>% 
-  ggplot(aes(x = publicationYear, y = count)) + 
+  ggplot(aes(x = publicationYear, y = scr_perart)) + 
   geom_point(aes(color = isPartOf), size = 3, alpha = 0.7) +
   geom_smooth(aes(color = isPartOf), span = 0.9, se = FALSE) +
-  scale_y_continuous(limits = c(0, 80)) +
   theme_minimal() +
 #geom_smooth(method = "lm", se = FALSE) +
   scale_color_discrete(guide = F) +
@@ -179,14 +179,20 @@ sum(t$count)
 # --------------------------------------------------------------
 # Proportion not just raw counts
 # --------------------------------------------------------------
+# 
+# scr_df %>% 
+#   group_by(publicationYear, isPartOf) %>% 
+#   count(publicationYear, isPartOf)
+# 
+# # making count proportional to total words
+# scr_df$scprop <- scr_df$count / scr_df$wordCount2
 
-# making count proportional to total words
-scr_df$scprop <- scr_df$count / scr_df$wordCount2
+# I used avg word use per article instead of proportional to word counts, see above.
 
 # graphing all articles
 scr_df %>% 
   filter(publicationYear > 1960) %>% 
-ggplot(aes(x = publicationYear, y = scprop)) +
+ggplot(aes(x = publicationYear, y = scr_perart)) +
   geom_point(size = 3, alpha = 0.5, aes(color = isPartOf)) +
   #facet_wrap(~isPartOf)
   geom_smooth(span = 1, se = FALSE)
@@ -200,26 +206,27 @@ df3 <- scr_df %>%
   summarize(count = mean(scprop))
 
 # graphing journal year averages (FINAL #1)
-df3 %>% 
+df2 %>% 
   #filter(publicationYear > 1960) %>% 
-  ggplot(aes(x = publicationYear, y = count)) + 
-  labs(y = "\"social* construct\" word proportion", x = NULL) +
+  ggplot(aes(x = publicationYear, y = scr_perart)) + 
+  labs(y = "Avg \"social* construct\" use per article", x = NULL) +
   scale_color_discrete(name = NULL) +
   geom_point(size = 3, alpha = 0.7, aes(color = isPartOf)) +
   # geom_smooth(span = 1, se = FALSE, aes(color = isPartOf)) +
   geom_smooth(span = 0.6, se = FALSE, color = "black") +
   #facet_wrap(~isPartOf) +
   scale_x_continuous(breaks = c(1900, 1920, 1940, 1960, 1980, 2000, 2020)) +
+  scale_y_continuous(breaks = c(0.0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75)) +
   theme_minimal() +
   theme(plot.margin=unit(c(0.5,0.5,0.5,0.5), 'cm'))
 
 ggsave("~/Desktop/scr1.jpg", width = 7.5, height = 4, units = "in")
 
 # graphing journal year averages (FINAL #2)
-df3 %>% 
+df2 %>% 
   filter(publicationYear > 1950) %>% 
-  ggplot(aes(x = publicationYear, y = count)) + 
-  labs(y = "\"social* construct\" word proportion", x = NULL) +
+  ggplot(aes(x = publicationYear, y = scr_perart)) + 
+  labs(y = "Avg \"social* construct\" use per article", x = NULL) +
   scale_color_discrete(guide = NULL, name = NULL) +
   geom_point(size = 3, alpha = 0.8, aes(color = isPartOf)) +
   # geom_smooth(span = 1, se = FALSE, aes(color = isPartOf)) +
@@ -227,6 +234,7 @@ df3 %>%
   #geom_smooth(span = 1, se = FALSE) +
   facet_wrap(~isPartOf) +
   scale_x_continuous(breaks = c(1960, 1980, 2000, 2020)) +
+  scale_y_continuous(breaks = c(0.0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75)) +
   theme_minimal() +
   theme(plot.margin=unit(c(0.5,0.5,0.5,0.5), 'cm'))
 
